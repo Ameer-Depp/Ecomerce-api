@@ -37,4 +37,13 @@ app.get("/health", (req, res) => {
   });
 });
 
+// Routes
+app.use("/api/auth", require("../routes/auth"));
+
+// Error handler
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Something went wrong!" });
+});
+
 module.exports = app;
