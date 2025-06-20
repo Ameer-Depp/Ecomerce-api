@@ -8,7 +8,7 @@ const registerSchema = joi.object({
   password: joi.string().min(6).required(),
   firstName: joi.string().required(),
   lastName: joi.string().required(),
-  role: joi.string().valid("CUSTOMER", "ADMIN").default("CUSTOMER"),
+  role: joi.string().valid("CUSTOMER").default("CUSTOMER"),
 });
 
 const loginSchema = joi.object({

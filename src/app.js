@@ -39,6 +39,8 @@ app.get("/health", (req, res) => {
 
 // Routes
 app.use("/api/auth", require("../routes/auth"));
+app.use("/api/user", require("../routes/user"));
+app.use("/api/category", require("../routes/category"));
 
 // Error handler
 app.use((err, req, res, next) => {

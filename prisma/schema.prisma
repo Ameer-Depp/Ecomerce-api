@@ -28,7 +28,7 @@ model User {
   password  String
   firstName String
   lastName  String
-  role      UserRole @default(CUSTOMER)
+  role      UserRole? @default(CUSTOMER)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
