@@ -1,38 +1,9 @@
-const joi = require("joi");
 const prisma = require("../config/database");
 const asyncHandler = require("express-async-handler");
-
-const ALLOWED_CATEGORIES = [
-  "ELECTRONICS",
-  "CLOTHING",
-  "BOOKS",
-  "HOME_GARDEN",
-  "SPORTS",
-  "BEAUTY",
-  "AUTOMOTIVE",
-  "TOYS",
-  "FOOD_BEVERAGES",
-];
-
-const createCategorySchema = joi.object({
-  name: joi
-    .string()
-    .uppercase()
-    .valid(...ALLOWED_CATEGORIES)
-    .required(),
-  description: joi.string().optional(),
-  imageUrl: joi.string().uri().optional(),
-});
-
-const updateCategorySchema = joi.object({
-  name: joi
-    .string()
-    .uppercase()
-    .valid(...ALLOWED_CATEGORIES)
-    .optional(),
-  description: joi.string().optional(),
-  imageUrl: joi.string().uri().optional(),
-});
+const {
+  updateCategorySchema,
+  createCategorySchema,
+} = require("../validations/categoryValidation");
 
 const createCategory = asyncHandler(async (req, res) => {
   const { error, value } = createCategorySchema.validate(req.body);

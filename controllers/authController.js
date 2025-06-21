@@ -1,20 +1,10 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
-const joi = require("joi");
 const prisma = require("../config/database");
-
-const registerSchema = joi.object({
-  email: joi.string().email().required(),
-  password: joi.string().min(6).required(),
-  firstName: joi.string().required(),
-  lastName: joi.string().required(),
-  role: joi.string().valid("CUSTOMER").default("CUSTOMER"),
-});
-
-const loginSchema = joi.object({
-  email: joi.string().email().required(),
-  password: joi.string().required(),
-});
+const {
+  loginSchema,
+  registerSchema,
+} = require("../validations/authValidation");
 
 const generateToken = (userId) => {
   return jwt.sign({ userId }, process.env.JWT_SECRET, {

@@ -2,13 +2,7 @@ const bcrypt = require("bcryptjs");
 const joi = require("joi");
 const prisma = require("../config/database");
 const asyncHandler = require("express-async-handler");
-
-const updateUserSchema = joi.object({
-  email: joi.string().email().required(),
-  password: joi.string().min(6).required(),
-  firstName: joi.string().required(),
-  lastName: joi.string().required(),
-});
+const { updateUserSchema } = require("../validations/userValidation");
 
 const getAllUsers = asyncHandler(async (req, res) => {
   const users = await prisma.user.findMany();
@@ -33,17 +27,16 @@ const deleteUser = asyncHandler(async (req, res) => {
   const user = await prisma.user.findUnique({
     where: { id },
   });
+
   if (!user) {
-    return res.status(404).json({ message: "this user does not exists" });
+    return res.status(404).json({ message: "User does not exist" });
   }
-  await prisma.cart.delete({
-    where: { userId: id },
-  });
+
   await prisma.user.delete({
     where: { id },
   });
 
-  return res.status(200).json({ message: "user has been deleted " });
+  return res.status(200).json({ message: "User has been deleted" });
 });
 
 const updateUser = asyncHandler(async (req, res) => {
