@@ -42,6 +42,8 @@ app.use("/api/auth", require("../routes/auth"));
 app.use("/api/user", require("../routes/user"));
 app.use("/api/category", require("../routes/category"));
 app.use("/api/products", require("../routes/product"));
+app.use("/api/cart", require("../routes/cart"));
+app.use("/api/orders", require("../routes/order"));
 
 // Error handler
 app.use((err, req, res, next) => {
