@@ -1,5 +1,6 @@
 const prisma = require("../config/database");
 const asyncHandler = require("express-async-handler");
+const CacheService = require("../services/CacheService");
 const {
   createProductSchema,
   updateProductSchema,
@@ -25,12 +26,18 @@ const createProduct = asyncHandler(async (req, res) => {
   } = value;
 
   // Check if category exists
-  const category = await prisma.category.findUnique({
-    where: { id: categoryId },
-  });
-
+  let category = await CacheService.getCategory(categoryId);
   if (!category) {
-    return res.status(404).json({ message: "Category not found" });
+    category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    // Cache the category
+    await CacheService.setCategory(categoryId, category);
   }
 
   // Create product with inventory in a transaction
@@ -63,6 +70,12 @@ const createProduct = asyncHandler(async (req, res) => {
     return { ...product, inventory };
   });
 
+  // Cache the new product
+  await CacheService.setProduct(result.id, result);
+
+  // Invalidate related caches
+  await CacheService.invalidateAllProductCaches();
+
   res.status(201).json({
     message: "Product created successfully",
     product: result,
@@ -87,6 +100,12 @@ const getAllProducts = asyncHandler(async (req, res) => {
     sortBy,
     sortOrder,
   } = value;
+
+  // Try to get from cache first
+  const cachedResult = await CacheService.getProductsList(value);
+  if (cachedResult) {
+    return res.status(200).json(cachedResult);
+  }
 
   // Build where clause
   const where = {
@@ -124,6 +143,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
         description: true,
         price: true,
         isActive: true,
+        imageUrl: true,
         category: {
           select: { name: true },
         },
@@ -137,7 +157,7 @@ const getAllProducts = asyncHandler(async (req, res) => {
 
   const totalPages = Math.ceil(totalCount / limit);
 
-  res.status(200).json({
+  const result = {
     products,
     pagination: {
       currentPage: page,
@@ -147,27 +167,41 @@ const getAllProducts = asyncHandler(async (req, res) => {
       hasNext: page < totalPages,
       hasPrev: page > 1,
     },
-  });
+  };
+
+  // Cache the result
+  await CacheService.setProductsList(value, result);
+
+  res.status(200).json(result);
 });
 
 // 🔍 GET SINGLE PRODUCT
 const getProductById = asyncHandler(async (req, res) => {
   const { id } = req.params;
 
-  const product = await prisma.product.findUnique({
-    where: { id },
-    include: {
-      category: {
-        select: { id: true, name: true },
-      },
-      inventory: {
-        select: { quantity: true },
-      },
-    },
-  });
+  // Try cache first
+  let product = await CacheService.getProduct(id);
 
   if (!product) {
-    return res.status(404).json({ message: "Product not found" });
+    // Get from database
+    product = await prisma.product.findUnique({
+      where: { id },
+      include: {
+        category: {
+          select: { id: true, name: true },
+        },
+        inventory: {
+          select: { quantity: true },
+        },
+      },
+    });
+
+    if (!product) {
+      return res.status(404).json({ message: "Product not found" });
+    }
+
+    // Cache the product
+    await CacheService.setProduct(id, product);
   }
 
   res.status(200).json(product);
@@ -195,12 +229,17 @@ const updateProduct = asyncHandler(async (req, res) => {
 
   // If categoryId is being updated, verify it exists
   if (categoryId) {
-    const category = await prisma.category.findUnique({
-      where: { id: categoryId },
-    });
-
+    let category = await CacheService.getCategory(categoryId);
     if (!category) {
-      return res.status(404).json({ message: "Category not found" });
+      category = await prisma.category.findUnique({
+        where: { id: categoryId },
+      });
+
+      if (!category) {
+        return res.status(404).json({ message: "Category not found" });
+      }
+
+      await CacheService.setCategory(categoryId, category);
     }
   }
 
@@ -224,6 +263,12 @@ const updateProduct = asyncHandler(async (req, res) => {
     },
   });
 
+  // Update cache
+  await CacheService.setProduct(id, updatedProduct);
+
+  // Invalidate related caches
+  await CacheService.invalidateAllProductCaches();
+
   res.status(200).json({
     message: "Product updated successfully",
     product: updatedProduct,
@@ -246,6 +291,10 @@ const deleteProduct = asyncHandler(async (req, res) => {
   await prisma.product.delete({
     where: { id },
   });
+
+  // Invalidate caches
+  await CacheService.invalidateProduct(id);
+  await CacheService.invalidateAllProductCaches();
 
   res.status(200).json({ message: "Product deleted successfully" });
 });
@@ -277,6 +326,11 @@ const updateInventory = asyncHandler(async (req, res) => {
     data: { quantity },
   });
 
+  // Update caches
+  await CacheService.setInventory(id, updatedInventory);
+  await CacheService.invalidateProduct(id); // Product cache includes inventory
+  await CacheService.invalidateAllProductCaches();
+
   res.status(200).json({
     message: "Inventory updated successfully",
     inventory: updatedInventory,
@@ -296,13 +350,28 @@ const getProductsByCategory = asyncHandler(async (req, res) => {
     return res.status(400).json({ message: "Invalid pagination parameters" });
   }
 
-  // Check if category exists
-  const category = await prisma.category.findUnique({
-    where: { id: categoryId },
-  });
+  // Try cache first
+  const cachedResult = await CacheService.getCategoryProducts(
+    categoryId,
+    pageNum,
+    limitNum
+  );
+  if (cachedResult) {
+    return res.status(200).json(cachedResult);
+  }
 
+  // Check if category exists
+  let category = await CacheService.getCategory(categoryId);
   if (!category) {
-    return res.status(404).json({ message: "Category not found" });
+    category = await prisma.category.findUnique({
+      where: { id: categoryId },
+    });
+
+    if (!category) {
+      return res.status(404).json({ message: "Category not found" });
+    }
+
+    await CacheService.setCategory(categoryId, category);
   }
 
   const skip = (pageNum - 1) * limitNum;
@@ -332,7 +401,7 @@ const getProductsByCategory = asyncHandler(async (req, res) => {
 
   const totalPages = Math.ceil(totalCount / limitNum);
 
-  res.status(200).json({
+  const result = {
     category: category.name,
     products,
     pagination: {
@@ -341,7 +410,12 @@ const getProductsByCategory = asyncHandler(async (req, res) => {
       totalCount,
       limit: limitNum,
     },
-  });
+  };
+
+  // Cache the result
+  await CacheService.setCategoryProducts(categoryId, pageNum, limitNum, result);
+
+  res.status(200).json(result);
 });
 
 // 🔍 SEARCH PRODUCTS
@@ -356,6 +430,17 @@ const searchProducts = asyncHandler(async (req, res) => {
 
   const pageNum = parseInt(page);
   const limitNum = parseInt(limit);
+
+  // Try cache first
+  const cachedResult = await CacheService.getSearchResults(
+    query.trim(),
+    pageNum,
+    limitNum
+  );
+  if (cachedResult) {
+    return res.status(200).json(cachedResult);
+  }
+
   const skip = (pageNum - 1) * limitNum;
 
   const searchCondition = {
@@ -391,7 +476,7 @@ const searchProducts = asyncHandler(async (req, res) => {
 
   const totalPages = Math.ceil(totalCount / limitNum);
 
-  res.status(200).json({
+  const result = {
     query,
     products,
     pagination: {
@@ -400,7 +485,12 @@ const searchProducts = asyncHandler(async (req, res) => {
       totalCount,
       limit: limitNum,
     },
-  });
+  };
+
+  // Cache the result
+  await CacheService.setSearchResults(query.trim(), pageNum, limitNum, result);
+
+  res.status(200).json(result);
 });
 
 module.exports = {
