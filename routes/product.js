@@ -13,21 +13,90 @@ const { requireAdmin, authenticateToken } = require("../middleware/auth");
 
 const router = express.Router();
 
-// 🔍 PUBLIC ROUTES (No authentication required)
-router.get("/", getAllProducts); // Get all products with filtering
-router.get("/search", searchProducts); // Search products
-router.get("/category/:categoryId", getProductsByCategory); // Get products by category
-router.get("/:id", getProductById); // Get single product
+/**
+ * @swagger
+ * /api/products:
+ *   get:
+ *     summary: Get all products
+ *     tags: [Products]
+ */
+router.get("/", getAllProducts);
 
-// 🔐 ADMIN ONLY ROUTES (Authentication + Admin role required)
-router.post("/", authenticateToken, requireAdmin, createProduct); // Create product
-router.put("/:id", authenticateToken, requireAdmin, updateProduct); // Update product
-router.delete("/:id", authenticateToken, requireAdmin, deleteProduct); // Delete product
+/**
+ * @swagger
+ * /api/products/search:
+ *   get:
+ *     summary: Search products
+ *     tags: [Products]
+ */
+router.get("/search", searchProducts);
+
+/**
+ * @swagger
+ * /api/products/category/{categoryId}:
+ *   get:
+ *     summary: Get products by category
+ *     tags: [Products]
+ */
+router.get("/category/:categoryId", getProductsByCategory);
+
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   get:
+ *     summary: Get product by ID
+ *     tags: [Products]
+ */
+router.get("/:id", getProductById);
+
+/**
+ * @swagger
+ * /api/products:
+ *   post:
+ *     summary: Create a product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post("/", authenticateToken, requireAdmin, createProduct);
+
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   put:
+ *     summary: Update a product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put("/:id", authenticateToken, requireAdmin, updateProduct);
+
+/**
+ * @swagger
+ * /api/products/{id}:
+ *   delete:
+ *     summary: Delete a product
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.delete("/:id", authenticateToken, requireAdmin, deleteProduct);
+
+/**
+ * @swagger
+ * /api/products/{id}/inventory:
+ *   patch:
+ *     summary: Update product inventory
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ */
 router.patch(
   "/:id/inventory",
   authenticateToken,
   requireAdmin,
   updateInventory
-); // Update inventory
+);
+// Update inventory
 
 module.exports = router;

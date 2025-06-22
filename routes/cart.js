@@ -15,12 +15,101 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // 🛒 CART OPERATIONS
-router.post("/add", addToCart); // Add item to cart
-router.get("/", getCart); // Get user's cart
-router.get("/summary", getCartSummary); // Get cart summary
-router.put("/items/:itemId", updateCartItem); // Update cart item quantity
-router.delete("/items/:itemId", removeFromCart); // Remove item from cart
-router.delete("/clear", clearCart); // Clear entire cart
+/**
+ * @swagger
+ * /api/cart/add:
+ *   post:
+ *     summary: Add item to cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Item added
+ */
+router.post("/add", addToCart);
+
+/**
+ * @swagger
+ * /api/cart:
+ *   get:
+ *     summary: Get current user's cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cart retrieved
+ */
+router.get("/", getCart);
+
+/**
+ * @swagger
+ * /api/cart/summary:
+ *   get:
+ *     summary: Get cart summary
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cart summary
+ */
+router.get("/summary", getCartSummary);
+
+/**
+ * @swagger
+ * /api/cart/items/{itemId}:
+ *   put:
+ *     summary: Update cart item quantity
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: itemId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Item updated
+ */
+router.put("/items/:itemId", updateCartItem);
+
+/**
+ * @swagger
+ * /api/cart/items/{itemId}:
+ *   delete:
+ *     summary: Remove item from cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: itemId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Item removed
+ */
+router.delete("/items/:itemId", removeFromCart);
+
+/**
+ * @swagger
+ * /api/cart/clear:
+ *   delete:
+ *     summary: Clear cart
+ *     tags: [Cart]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Cart cleared
+ */
+router.delete("/clear", clearCart);
 
 module.exports = router;
 

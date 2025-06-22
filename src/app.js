@@ -3,7 +3,7 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
-
+const setupSwagger = require("../config/swagger");
 const app = express();
 
 // Rate limiting
@@ -19,6 +19,7 @@ app.use(morgan("combined"));
 app.use(limiter);
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true }));
+setupSwagger(app);
 
 // Test route
 app.get("/", (req, res) => {
