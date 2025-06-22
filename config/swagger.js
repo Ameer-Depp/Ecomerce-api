@@ -11,7 +11,7 @@ const options = {
     },
     servers: [
       {
-        url: "http://localhost:3000", // Change if using different base URL
+        url: "https://ecomerce-api-dski.onrender.com/api-docs", // Change if using different base URL
       },
     ],
     components: {
@@ -29,7 +29,7 @@ const options = {
       },
     ],
   },
-  apis: ["./src/routes/*.js"], // Adjust if your routes are stored elsewhere
+  apis: [".routes/*.js"], // Adjust if your routes are stored elsewhere
 };
 
 const swaggerSpec = swaggerJSDoc(options);
