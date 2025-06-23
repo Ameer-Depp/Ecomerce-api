@@ -1,3 +1,4 @@
+const { url } = require("inspector");
 const swaggerJSDoc = require("swagger-jsdoc");
 const swaggerUi = require("swagger-ui-express");
 
@@ -5,37 +6,24 @@ const options = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "Your API Title",
+      title: "E-commerce API",
       version: "1.0.0",
-      description: "API documentation for your Express app",
+      description: "API for E-commerec app, carts, products and orders.",
     },
     servers: [
       {
-        url: "https://ecomerce-api-dski.onrender.com/api-docs", // Change if using different base URL
-      },
-    ],
-    components: {
-      securitySchemes: {
-        bearerAuth: {
-          type: "http",
-          scheme: "bearer",
-          bearerFormat: "JWT",
-        },
-      },
-    },
-    security: [
-      {
-        bearerAuth: [],
+        url: "https://localhost:3000",
+        url: "https://ecomerce-api-dski.onrender.com/api-docs",
       },
     ],
   },
-  apis: [".routes/*.js"], // Adjust if your routes are stored elsewhere
+  apis: ["./routes/*.js"],
 };
 
 const swaggerSpec = swaggerJSDoc(options);
 
-function setupSwagger(app) {
+function swaggerDocs(app) {
   app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 }
 
-module.exports = setupSwagger;
+module.exports = swaggerDocs;
